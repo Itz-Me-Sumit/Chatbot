@@ -5,3 +5,8 @@ langchain
 langchain-openai
 langgraph
 langsmith
+langgraph-checkpoint-postgres
+psycopg[binary,pool]
+mcp[cli]<2
+ddgs
+langchain-mcp-adapters

@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     openrouter_api_key: str
     openrouter_model: str = "meta-llama/llama-3.3-70b-instruct:free"
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
+    database_url: str = "postgresql://chatbot:chatbot@localhost:5432/chatbot"
+    mcp_server_url: str = "http://localhost:8001/mcp"
 
     langsmith_tracing: bool = False
     langsmith_api_key: str | None = None
