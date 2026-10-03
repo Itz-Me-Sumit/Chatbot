@@ -1,5 +1,8 @@
 import json
 import uuid
+import logging
+
+logger = logging.getLogger("chat")
 
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
@@ -32,11 +35,20 @@ async def chat_stream(req: ChatRequest, request: Request):
             async for chunk, meta in graph.astream(
                 inputs, config=config, stream_mode="messages"
             ):
-                if meta.get("langgraph_node") == "chatbot" and chunk.content:
-                    yield sse("token", {"content": chunk.content})
+                node = meta.get("langgraph_node")
+                if node == "chatbot" and isinstance(chunk, AIMessageChunk):
+                    for tc in chunk.tool_call_chunks:
+                        if tc.get("name"):
+                            yield sse("tool_start", {"name": tc["name"]})
+                    if chunk.content:
+                        yield sse("token", {"content": chunk.content})
+                elif node == "tools" and isinstance(chunk, ToolMessage):
+                    yield sse("tool_end", {"name": chunk.name})
+
             yield sse("done", {})
-        except Exception as e:
-            yield sse("error", {"message": str(e)})
+        except Exception:
+            logger.exception("stream failed")
+            yield sse("error", {"message": "Model se connection me dikkat aayi, dobara try karo."})
 
     return StreamingResponse(
         event_gen(),

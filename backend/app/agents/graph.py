@@ -5,12 +5,15 @@ from langgraph.prebuilt import ToolNode, tools_condition
 from app.agents.llm import get_llm
 
 SYSTEM_PROMPT = (
-    "You are a helpful assistant. Reply in the same language as the user. "
-    "Be clear and concise. "
+    "You are a helpful assistant. Reply in the same language and script as the user: "
+    "if the user writes Hinglish in Roman letters, reply in Hinglish in Roman letters, "
+    "never in Devanagari. "
     "Use the web_search tool for recent events, current facts, or anything "
     "you are unsure about, and use current_datetime when the date or time matters. "
     "Do not use tools for simple questions you can answer directly."
 )
+
+
 
 
 def build_graph(checkpointer=None, tools=None):
