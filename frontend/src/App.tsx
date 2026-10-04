@@ -10,6 +10,7 @@ import type { Conversation } from "./api";
 import ChatInput from "./components/ChatInput";
 import ChatMessage from "./components/ChatMessage";
 import Sidebar from "./components/Sidebar";
+import Welcome from "./components/Welcome";
 import type { Msg } from "./types";
 
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
   const [threadId, setThreadId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [busy, setBusy] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const runRef = useRef(0);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -45,7 +47,7 @@ export default function App() {
     );
 
   const stopCurrent = () => {
-    runRef.current++; // purani stream ke baaki updates ignore honge
+    runRef.current++;
     abortRef.current?.abort();
     abortRef.current = null;
     setBusy(false);
@@ -56,9 +58,11 @@ export default function App() {
     stopCurrent();
     setThreadId(null);
     setMessages([]);
+    setSidebarOpen(false);
   };
 
   const selectChat = async (id: string) => {
+    setSidebarOpen(false);
     if (id === threadId) return;
     stopCurrent();
     setThreadId(id);
@@ -67,7 +71,9 @@ export default function App() {
       const msgs = await getMessages(id);
       setMessages(msgs.map((m) => ({ role: m.role, content: m.content })));
     } catch {
-      setMessages([{ role: "assistant", content: "", error: "Chat load nahi ho payi." }]);
+      setMessages([
+        { role: "assistant", content: "", error: "Chat load nahi ho payi." },
+      ]);
     }
   };
 
@@ -143,10 +149,12 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen bg-white">
+    <div className="flex h-dvh overflow-hidden bg-bg text-text">
       <Sidebar
         conversations={conversations}
         activeId={threadId}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
         onSelect={selectChat}
         onNew={newChat}
         onRename={rename}
@@ -154,21 +162,62 @@ export default function App() {
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-          <span className="font-semibold">Chatbot</span>
-          <span className="text-sm text-gray-500">
-            Built by <span className="font-medium text-gray-800">Sumit</span>
-            {" · "}Student from IIT Madras
-          </span>
+        <header className="flex items-center gap-3 border-b border-line bg-panel/80 px-3 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur md:px-5">
+          <button
+            aria-label="Open chat history"
+            className="rounded-lg p-2 text-muted hover:bg-panel-2 hover:text-text md:hidden"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            >
+              <path d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-accent to-violet-500 text-white">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Z" />
+              </svg>
+            </div>
+            <div className="min-w-0">
+              <h1 className="truncate text-sm font-semibold leading-tight">
+                Chatbot
+              </h1>
+              <p className="truncate text-[11px] leading-tight text-muted sm:hidden">
+                Built by Sumit
+              </p>
+            </div>
+          </div>
+
+          <div className="ml-auto hidden items-center gap-2 rounded-full border border-line bg-panel-2 px-3 py-1.5 text-xs text-muted sm:flex">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            <span>
+              Built by <span className="font-medium text-text">Sumit</span>
+              {" · "}Student from IIT Madras
+            </span>
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto flex max-w-3xl flex-col gap-4 p-4">
-            {messages.length === 0 && (
-              <p className="mt-20 text-center text-gray-400">
-                Kuch bhi poocho, main yahi hu.
-              </p>
-            )}
+          <div className="mx-auto flex max-w-3xl flex-col gap-5 px-3 py-5 md:px-4">
+            {messages.length === 0 && <Welcome onPick={send} disabled={busy} />}
             {messages.map((m, i) => (
               <ChatMessage
                 key={i}
